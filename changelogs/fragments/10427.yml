@@ -1,0 +1,2 @@
+fix:
+- Corrected time-based bar chart title to use numerical axis name ([#10427](https://github.com/opensearch-project/OpenSearch-Dashboards/pull/10427))
