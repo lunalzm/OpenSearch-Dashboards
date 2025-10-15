@@ -267,7 +267,7 @@ export const applyAxisStyling = (
 
       return {
         ...baseAxis,
-        title: valueAxis.title?.text,
+        title: valueAxis.title?.text || baseAxis.title,
         orient,
         labelAngle: valueAxis.labels?.rotate || 0,
         labelLimit: valueAxis.labels?.truncate || 100,

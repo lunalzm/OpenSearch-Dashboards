@@ -16,6 +16,28 @@ import { getTooltipFormat } from '../utils/utils';
 import { createCrosshairLayers, createHighlightBarLayers } from '../utils/create_hover_state';
 import { createTimeRangeBrush, createTimeRangeUpdater } from '../utils/time_range_brush';
 
+const stripYAxisRecursively = (node: any): any => {
+  if (!node || typeof node !== 'object') return node;
+  const cloned = { ...node };
+  if (cloned.encoding) {
+    const enc = { ...cloned.encoding };
+    const killAxis = (k: 'y' | 'y1' | 'y2') => {
+      if (enc[k]) enc[k] = { ...enc[k], axis: null };
+    };
+    killAxis('y');
+    killAxis('y1');
+    killAxis('y2');
+    cloned.encoding = enc;
+  }
+  if (Array.isArray(cloned.layer)) {
+    cloned.layer = cloned.layer.map((l: any) => stripYAxisRecursively(l));
+  }
+  if (cloned.spec) {
+    cloned.spec = stripYAxisRecursively(cloned.spec);
+  }
+  return cloned;
+};
+
 /**
  * Rule 1: Create a simple line chart with one metric and one date
  * @param transformedData The transformed data
@@ -268,33 +290,33 @@ export const createLineBarChart = (
   // Add threshold layer if enabled
   const thresholdLayer = createThresholdLayer(styles?.thresholdOptions);
   if (thresholdLayer) {
-    barWithThresholdLayer.layer.push(thresholdLayer);
+    // barWithThresholdLayer.layer.push(thresholdLayer);
+    barWithThresholdLayer.layer.push(stripYAxisRecursively(thresholdLayer));
   }
 
   layers.push(barWithThresholdLayer, lineLayer);
 
-  layers.push(
-    ...createHighlightBarLayers(
-      {
-        x: {
-          name: dateField ?? '',
-          type: 'temporal',
-          title: dateName,
-        },
-        y: {
-          name: metric1Field ?? '',
-          type: 'quantitative',
-          title: metric1Name,
-        },
-        y1: {
-          name: metric2Field ?? '',
-          type: 'quantitative',
-          title: metric2Name,
-        },
+  const highlightLayers = createHighlightBarLayers(
+    {
+      x: {
+        name: dateField ?? '',
+        type: 'temporal',
+        title: dateName,
       },
-      { showTooltip }
-    )
-  );
+      y: {
+        name: metric1Field ?? '',
+        type: 'quantitative',
+        title: metric1Name,
+      },
+      y1: {
+        name: metric2Field ?? '',
+        type: 'quantitative',
+        title: metric2Name,
+      },
+    },
+    { showTooltip }
+  ).map((ly: any) => stripYAxisRecursively(ly));
+  layers.push(...highlightLayers);
 
   // Add time marker layer if enabled
   const timeMarkerLayer = createTimeMarkerLayer(styles);
